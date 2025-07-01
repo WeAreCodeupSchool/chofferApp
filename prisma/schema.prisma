@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model address {
+  id          Int     @id @default(autoincrement())
+  calle       String  @db.VarChar(100)
+  numero      Int
+  postal_code String? @db.VarChar(100)
+  users       users[]
+}
+
+model chofer {
+  chofer_id     Int             @id @default(autoincrement())
+  rating        Float?          @default(5) @db.Float
+  user_id       Int?
+  users         users?          @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "chofer_users_FK")
+  trip_requests trip_requests[]
+
+  @@index([user_id], map: "chofer_users_FK")
+}
+
+model client {
+  client_id     Int             @id @default(autoincrement())
+  user_id       Int
+  users         users           @relation(fields: [user_id], references: [id], onUpdate: NoAction, map: "cliente_users_FK")
+  trip_requests trip_requests[]
+
+  @@index([user_id], map: "cliente_users_FK")
+}
+
+model trip_requests {
+  id              Int    @id @default(autoincrement())
+  chofer_id       Int
+  client_id       Int
+  status          String
+  estimated_price Float  @db.Float
+  chofer          chofer @relation(fields: [chofer_id], references: [chofer_id], onDelete: NoAction, onUpdate: NoAction, map: "trip_requests_chofer_FK")
+  client          client @relation(fields: [client_id], references: [client_id], onDelete: NoAction, onUpdate: NoAction, map: "trip_requests_client_FK")
+
+  @@index([chofer_id], map: "trip_requests_chofer_FK")
+  @@index([client_id], map: "trip_requests_client_FK")
+}
+
+model users {
+  id             Int      @id @default(autoincrement())
+  email          String   @db.VarChar(150)
+  password       String   @db.VarChar(200)
+  stripe_card_id String   @db.VarChar(100)
+  phone          String   @db.VarChar(100)
+  role           String   @db.VarChar(100)
+  address_id     Int?
+  chofer         chofer[]
+  client         client[]
+  address        address? @relation(fields: [address_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "users_address_FK")
+
+  @@index([address_id], map: "users_address_FK")
+}
